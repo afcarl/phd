@@ -7,9 +7,9 @@ import envs_dov
 
 
 catalog = {}
-catalog.update(envs_dmp2d.catalog) # DMP2D
+#catalog.update(envs_dmp2d.catalog) # DMP2D
+#catalog.update(envs_vworlds.catalog) # VWorlds
 catalog.update(envs_dov.catalog) # Dovecot
-catalog.update(envs_vworlds.catalog) # VWorlds
 
 def kin(dim=20, limit=150, lengths=None):
     kin_cfg = environments.envs.KinematicArm2D.defcfg._deepcopy()

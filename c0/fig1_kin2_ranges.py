@@ -1,3 +1,9 @@
+# Code for generating figures of the the PhD thesis:
+# 'Self-Exploration of Sensorimotor Spaces in Robots' by Fabien C. Y. Benureau
+# Licensed under the Open Science License (see http://fabien.benureau.com/openscience.html)
+
+# see also fig1_kin7_examples.py for the plot on the right in Figure 1.
+
 from bokeh import plotting
 
 import environments
