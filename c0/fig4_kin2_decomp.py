@@ -4,8 +4,6 @@
 
 import random
 
-from bokeh import plotting
-
 import explorers
 import environments
 
@@ -23,7 +21,7 @@ ex_name  = 'random.motor'
 random.seed(0)
 
 
-# Instanciating the Environment, the Explorer
+# instanciating the environment
 env_cfg = envs.catalog[env_name]._deepcopy()
 env = environments.Environment.create(env_cfg)
 
@@ -32,7 +30,7 @@ ex_cfg.m_channels = env.m_channels
 ex_cfg.s_channels = env.s_channels
 ex = explorers.Explorer.create(ex_cfg)
 
-# Running the Exploration
+# running the exploration
 explorations, s_vectors, s_goals = factored.run_exploration(env, ex, N)
 
 
@@ -45,24 +43,24 @@ for explo, s_vector in zip(explorations, s_vectors):
         s_vectors_neg.append(s_vector)
 
 
-plotting.output_file('../../results/c0_fig4_kin2_decomp.html')
+graphs.output_file('c0_fig4_kin2_decomp.html')
 
 # Positive Graph
-graphs.bokeh_spread(env.s_channels, s_vectors=s_vectors_pos,
-                    e_radius=1.0, e_alpha=0.5,
-                    title='{}::{} [positive]'.format(env_name, ex_name))
-plotting.hold(True)
-graphs.bokeh_kin(env, [{'j0': i, 'j1':-150+2*i} for i in range(150, -1, -10)],
-                 color='#333333', alpha=0.5, swap_xy=True)
-plotting.hold(False)
+graphs.spread(env.s_channels, s_vectors=s_vectors_pos,
+              e_radius=1.0, e_alpha=0.5,
+              title='{}::{} [positive]'.format(env_name, ex_name))
+graphs.hold(True)
+graphs.posture_signals(env, [{'j0': i, 'j1':-150+2*i} for i in range(150, -1, -10)],
+                       color='#333333', alpha=0.5, swap_xy=True)
+graphs.hold(False)
 
 # Negative Graph
-graphs.bokeh_spread(env.s_channels, s_vectors=s_vectors_neg,
-                    e_radius=1.0, e_alpha=0.5,
-                    title='{}::{} [negative]'.format(env_name, ex_name))
-plotting.hold(True)
-graphs.bokeh_kin(env, [{'j0': -i, 'j1':-150+2*i} for i in range(0, 151, 10)],
-                 color='#333333', alpha=0.5, swap_xy=True)
-plotting.hold(False)
+graphs.spread(env.s_channels, s_vectors=s_vectors_neg,
+              e_radius=1.0, e_alpha=0.5,
+              title='{}::{} [negative]'.format(env_name, ex_name))
+graphs.hold(True)
+graphs.posture_signals(env, [{'j0': -i, 'j1':-150+2*i} for i in range(0, 151, 10)],
+                       color='#333333', alpha=0.5, swap_xy=True)
+graphs.hold(False)
 
-plotting.show()
+graphs.show()

@@ -35,16 +35,17 @@ cfg.testscov.ticks         = [2000, 10000] #[1, 2, 3, 4, 5, 10, 15, 20] + [i for
 
 expcfgs_levels = [[]]
 
-for dim in [2, 5, 7, 8, 9, 10, 15, 20, 30, 40, 60, 80, 100] : #, 150, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 2000]:
-    for explorer_name in ['random.motor', 'random.goal']:
-        env_name = 'kin{}_150'.format(dim)
+
+for dim in [2, 5, 7, 8, 9, 10, 15, 20, 30, 40, 60, 80, 100]: #, 150, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 2000]:
+    for ex_name in ['random.motor', 'random.goal']:
+        env_name, env_cfg = envs.kin(dim=dim, limit=150)
         exp_cfg = cfg._deepcopy()
 
-        exp_cfg.exploration.explorer._update(exs.catalog[explorer_name], overwrite=False)
-        exp_cfg.job.env._update(envs.catalog[env_name], overwrite=False)
+        exp_cfg.exploration.explorer._update(exs.catalog[ex_name], overwrite=False)
+        exp_cfg.job.env._update(env_cfg, overwrite=False)
 
-        exp_cfg.exp.key = ((exp_cfg.exp.prefix_name + (explorer_name, env_name), cfg.exp.repetitions), ())
-        exp_cfg.exp.explorer_name = explorer_name
+        exp_cfg.exp.key = ((exp_cfg.exp.prefix_name + (ex_name, env_name), cfg.exp.repetitions), ())
+        exp_cfg.exp.explorer_name = ex_name
         exp_cfg.exp.env_name      = env_name
         expcfgs_levels[0].append(exp_cfg)
 

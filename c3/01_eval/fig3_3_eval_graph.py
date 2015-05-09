@@ -4,8 +4,6 @@
 
 import os
 
-from bokeh import plotting
-
 from explib.graphs import hub
 from explib.jobs import jobfactory
 
@@ -44,12 +42,13 @@ for i, exp_cfg in enumerate(expcfgs_levels[0]):
 
 os.chdir(cwd)
 colors = ['#2577B2', '#E84A5F']
-plotting.output_file('../../../results/c3_fig3_3_eval_perf.html')
+graphs.output_file('c3_fig3_3_eval_perf.html')
 
 for color, ex_name in zip(colors, dims.keys()):
-    graphs.bokeh_std_discrete(dims[ex_name], avgs[ex_name], stds[ex_name], std_width=0.25, color=color,
-                              x_range=[0.0, 110.0], y_range=[0.0, y_max+0.1],
-                              plot_width=1000, plot_height=300, title=str(ex_name))
-    plotting.hold(True)
+    graphs.perf_std_discrete(dims[ex_name], avgs[ex_name], stds[ex_name],
+                             std_width=0.25, color=color, title=str(ex_name),
+                             x_range=[0.0, 110.0], y_range=[0.0, y_max+0.1],
+                             plot_width=1000, plot_height=300)
+    graphs.hold(True)
 
-plotting.show()
+graphs.show()

@@ -1,9 +1,10 @@
+# Code for generating figures of the the PhD thesis:
+# 'Self-Exploration of Sensorimotor Spaces in Robots' by Fabien C. Y. Benureau
+# Licensed under the Open Science License (see http://fabien.benureau.com/openscience.html)
+
 import random
 
-from bokeh import plotting
-
 import explorers
-import learners
 import environments
 
 import dotdot
@@ -13,11 +14,11 @@ import factored
 import graphs
 
 
-ARM_DIM = 20
+DIM = 20
 RES     = 20
 N       = 10000
 
-plotting.output_file('../../../results/c3_fig3_13_inverse.html')
+graphs.output_file('c3_fig3_13_inverse.html')
 
 
 for disturb in [0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.2, 0.5, 1.0]:
@@ -25,6 +26,7 @@ for disturb in [0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.2, 0.5, 1.0]:
         random.seed(0)
 
         print(disturb, env_name)
+
         # instanciating the environment
         env_cfg = envs.catalog[env_name]
         env = environments.Environment.create(env_cfg)
@@ -41,8 +43,8 @@ for disturb in [0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.2, 0.5, 1.0]:
 
         # making graphs
         radius = {0.001: 1.0, 0.005: 1.0}.get(disturb, 1.25)
-        graphs.bokeh_spread(env.s_channels, s_vectors=s_vectors, s_goals=s_goals,
-                            e_radius=radius, e_alpha=0.25, g_color=None,
-                            title='{}::{}'.format(env_name, disturb))
+        graphs.spread(env.s_channels, s_vectors=s_vectors, s_goals=s_goals,
+                      e_radius=radius, e_alpha=0.25, g_color=None,
+                      title='{}::{}'.format(env_name, disturb))
 
-plotting.show()
+graphs.show()

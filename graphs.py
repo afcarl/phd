@@ -1,9 +1,11 @@
 from __future__ import division, print_function
 
+import os
 import bisect
 import struct
 import numbers
 import math
+import random
 
 import numpy as np
 from bokeh import plotting
@@ -17,14 +19,27 @@ except ImportError:
 
 from environments import tools
 
+import factored
 
-SRC_COLOR = '#2577B2'
-TGT_COLOR = '#E84A5F'
-RANDREUSE_COLOR = '#408000'
+
+    ## color
+
+BLUE  = '#2577B2' # light blue
+PINK  = '#E84A5F'
+GREEN = '#5AB953'
+
+MB_COLOR = BLUE
+GB_COLOR = PINK
+
+NOREUSE_COLOR   = BLUE
+REUSE_COLOR     = PINK
+RANDREUSE_COLOR = '#408000' # green
+
+E_COLOR = '#2779B3' # blue
+G_COLOR = '#FF030D' # red
+
 
 white   = (255, 255, 255)
-E_COLOR = '#2779B3'#rgb2hex(( 39, 121, 179))
-G_COLOR = '#FF030D'
 
 def rgb2hex(rgb):
     return '#{0:02x}{1:02x}{2:02x}'.format(int(rgb[0]), int(rgb[1]), int(rgb[2]))
@@ -39,7 +54,8 @@ def rgba2rgb(rgb, rgba):
             (1-a)*rgb[2] + a * b)
 
 C_COLOR   = rgb2hex((21, 152, 71))
-C_COLOR_H = rgb2hex(rgba2rgb(white, (21, 152, 71, 0.5)))
+#C_COLOR_H = rgb2hex(rgba2rgb(white, (21, 152, 71, 0.5)))
+C_COLOR_H = rgb2hex((200, 200, 200))
 
 def hexa(hex, alpha):
     rgb = hex2rgb(hex)
@@ -61,22 +77,115 @@ def ranges(s_channels, x_range=None, y_range=None):
     return x_range, y_range
 
 
+    ## bokeh wrapping
+
+results_dir = os.path.abspath(os.path.join(__file__, '../../results'))
+def output_file(filepath):
+    return plotting.output_file(os.path.join(results_dir, filepath))
+
+def hold(flag):
+    return plotting.hold(flag)
+
+def show():
+    return plotting.show()
+
+def grid():
+    return plotting.grid()
 
 
-def bokeh_line(x_range, avg, std, color='#E84A5F', dashes=(4, 2), alpha=1.0):
+    ## displaying kinematic 2D arm postures
+
+def posture_vectors(env, m_vectors, **kwargs):
+    m_signals = [tools.to_signal(m_vector, env.m_channels) for m_vector in m_vectors]
+    return posture_signals(env, m_signals, **kwargs)
+
+def posture_extrema(env, explorations, thetas=tuple(i*math.pi/4 for i in range(8)), **kwargs):
+    s_vectors = [tools.to_vector(e[1]['s_signal'], env.s_channels) for e in explorations]
+    idxs = factored.spread_extrema(s_vectors, dirs=thetas)
+    m_signals = [explorations[idx][0]['m_signal'] for idx in idxs]
+    posture_signals(env, m_signals, **kwargs)
+
+def posture_idxs(env, explorations, idxs=None, **kwargs):
+    if idxs is None:
+        idxs=[int(len(explorations)*i/5.0) for i in range(5)]
+    posture_signals(env, [explorations[i][0]['m_signal'] for i in idxs], **kwargs)
+
+def posture_random(env, explorations, n=5, **kwargs):
+    m_display = choose_m_vectors(env.m_channels, explorations, n=n)
+    posture_vectors(env, m_display, **kwargs)
+
+def choose_m_vectors(m_channels, explorations, n=5):
+    """FIXME: no replacements"""
+    m_vectors = []
+    for _ in range(n):
+        explo = random.choice(explorations)
+        m_vector = tools.to_vector(explo[0]['m_signal'], m_channels)
+        m_vectors.append(m_vector)
+
+    return m_vectors
+
+#'#91C46C'
+def posture_signals(kin_env, m_signals, title='posture graphs',
+                    color='#666666', alpha=1.0, radius_factor=1.0,
+                    swap_xy=True, x_range=[-1.0, 1.0], y_range=[-1.0, 1.0], **kwargs):
+
+    for m_signal in m_signals:
+        m_vector = kin_env.flatten_synergies(m_signal)
+        s_signal = kin_env._multiarm.forward_kin(m_vector)
+
+        xs, ys = [0.0], [0.0]
+        for i in range(kin_env.cfg.dim):
+            xs.append(s_signal['x{}'.format(i+1)])
+            ys.append(s_signal['y{}'.format(i+1)])
+
+        if isinstance(kin_env.cfg.lengths, numbers.Real):
+            total_length = kin_env.cfg.lengths*kin_env.cfg.dim
+        else:
+            total_length = sum(kin_env.cfg.lengths)
+        total_length += 0.0
+
+        kwargs.update({'x_range'     : x_range,
+                       'y_range'     : y_range,
+                       'line_color'  : color,
+                       'line_alpha'  : alpha,
+                       'fill_color'  : color,
+                       'fill_alpha'  : alpha,
+                       'title'       : title
+                      })
+
+        if swap_xy:
+            xs, ys = ys, xs
+
+        plotting.line(xs, ys, line_width=2.0*radius_factor, **kwargs)
+        plotting.hold(True)
+        plotting.grid().grid_line_color = None
+        plotting.ygrid().grid_line_color = None
+        plotting_axis()
+
+        plotting.circle(xs[  : 1], ys[  : 1], radius=radius_factor*0.015, **kwargs)
+        plotting.circle(xs[ 1:-1], ys[ 1:-1], radius=radius_factor*0.008, **kwargs)
+        plotting.circle(xs[-1:  ], ys[-1:  ], radius=radius_factor*0.01, color='red', alpha=alpha)
+    plotting.hold(False)
+
+
+    ## wrapping plots
+
+def line(x_range, avg, std, color='#E84A5F', dashes=(4, 2), alpha=1.0):
     plotting.line(x_range, [avg, avg], line_color=color, line_dash=list(dashes), line_alpha=alpha)
     plotting.hold(True)
     plotting.rect([(x_range[0]+x_range[1])/2.0], [avg], [x_range[1]-x_range[0]], [2*std],
                   fill_color=color, line_color=None, fill_alpha=0.1*alpha)
     plotting.hold(False)
 
-def bokeh_spread(s_channels, s_vectors=(), s_goals=(),
-                 title='no title', swap_xy=True, x_range=None, y_range=None,
-                 e_radius=1.0, e_color=E_COLOR, e_alpha=0.75,
-                 g_radius=1.0, g_color=G_COLOR, g_alpha=0.75,
-                 radius_units='screen', font_size='11pt', **kwargs):
+def spread(s_channels, s_vectors=(), s_goals=(),
+           title='no title', swap_xy=True, x_range=None, y_range=None,
+           e_radius=1.0, e_color=E_COLOR, e_alpha=0.75,
+           g_radius=1.0, g_color=G_COLOR, g_alpha=0.75,
+           grid=True, radius_units='screen', font_size='11pt', **kwargs):
 
     x_range, y_range = ranges(s_channels, x_range=x_range, y_range=y_range)
+
+    # effects
     try:
         xv, yv = zip(*(s[:2] for s in s_vectors))
     except ValueError:
@@ -91,6 +200,7 @@ def bokeh_spread(s_channels, s_vectors=(), s_goals=(),
 #                     title_text_font_size=font_size, **kwargs)
     plotting.hold(True)
 
+    # goals
     try:
         xg, yg = zip(*s_goals)
     except ValueError:
@@ -98,12 +208,15 @@ def bokeh_spread(s_channels, s_vectors=(), s_goals=(),
     if swap_xy:
         xg, yg = yg, xg
     plotting.scatter(xg, yg, radius=g_radius, radius_units="screen", fill_color=g_color, fill_alpha=g_alpha, line_color=None)
-    plotting_axis()
 
+    plotting_axis()
+    if not grid:
+        plotting.grid().grid_line_color = None
     plotting.hold(False)
 
+bokeh_spread = spread
 
-def bokeh_coverage(s_channels, threshold, s_vectors=(),
+def coverage(s_channels, threshold, s_vectors=(),
                    title='no title', swap_xy=True, x_range=None, y_range=None,
                    color=C_COLOR, c_alpha=1.0, alpha=0.5, **kwargs):
 
@@ -139,6 +252,7 @@ def bokeh_coverage(s_channels, threshold, s_vectors=(),
     plotting_axis()
     plotting.hold(False)
 
+bokeh_coverage = coverage
 
 def bokeh_nn(s_channels, testset, errors,
              title='no title', swap_xy=True, x_range=None, y_range=None,
@@ -162,11 +276,11 @@ def bokeh_nn(s_channels, testset, errors,
     plotting.grid().grid_line_color='white'
     plotting.hold(False)
 
-def bokeh_mesh(meshgrid, s_vectors=(), s_goals=(),
-               mesh_timescale=(1000000,), mesh_colors=(C_COLOR_H,), title='no title',
-               e_radius=1.0, e_color=E_COLOR, e_alpha=0.75,
-               g_radius=1.0, g_color=G_COLOR, g_alpha=0.75, swap_xy=True, tile_ratio=0.97,
-               x_range=None, y_range=None):
+def mesh(meshgrid, s_vectors=(), s_goals=(),
+         mesh_timescale=(1000000,), mesh_colors=(C_COLOR_H,), title='no title',
+         e_radius=1.0, e_color=E_COLOR, e_alpha=0.75,
+         g_radius=1.0, g_color=G_COLOR, g_alpha=0.75, swap_xy=True, tile_ratio=0.97,
+         x_range=None, y_range=None):
 
     x_range, y_range = ranges(meshgrid.s_channels, x_range=x_range, y_range=y_range)
     xm = zip(*[b.bounds[0] for b in meshgrid.nonempty_bins])
@@ -188,9 +302,9 @@ def bokeh_mesh(meshgrid, s_vectors=(), s_goals=(),
     plotting.hold(True)
     plotting.grid().grid_line_color='white'
 
-    bokeh_spread(meshgrid.s_channels, s_vectors=s_vectors, s_goals=s_goals, swap_xy=swap_xy,
-                 e_radius=e_radius, e_color=e_color, e_alpha=e_alpha,
-                 g_radius=g_radius, g_color=g_color, g_alpha=g_alpha)
+    spread(meshgrid.s_channels, s_vectors=s_vectors, s_goals=s_goals, swap_xy=swap_xy,
+           e_radius=e_radius, e_color=e_color, e_alpha=e_alpha,
+           g_radius=g_radius, g_color=g_color, g_alpha=g_alpha)
     plotting.hold(False)
 
 
@@ -258,9 +372,9 @@ def bokeh_mesh_density(meshgrid, s_vectors=(), s_goals=(), swap_xy=True,
                   line_color='#444444', line_alpha=0.0, title=title)
     plotting.hold(True)
     plotting.grid().grid_line_color='white'
-    bokeh_spread(meshgrid.s_channels, s_vectors=s_vectors, s_goals=s_goals, swap_xy=swap_xy,
-                 e_radius=e_radius, e_color=e_color, e_alpha=e_alpha,
-                 g_radius=g_radius, g_color=g_color, g_alpha=g_alpha)
+    spread(meshgrid.s_channels, s_vectors=s_vectors, s_goals=s_goals, swap_xy=swap_xy,
+           e_radius=e_radius, e_color=e_color, e_alpha=e_alpha,
+           g_radius=g_radius, g_color=g_color, g_alpha=g_alpha)
     plotting.hold(False)
 
     plotting.hold(False)
@@ -273,22 +387,18 @@ def plotting_axis():
     plotting.yaxis().major_tick_in = 0
 
 
-def bokeh_stds(ticks, avgs, stds, color='#000055', alpha=1.0, **kwargs):
-    plotting.line(ticks, avgs, color=color, line_alpha=alpha, title_text_font_size= '6pt', **kwargs)
-    plotting.hold(True)
-
+def perf_std(ticks, avgs, stds, **kwargs):
     if stds is not None:
-        x_std = list(ticks) + list(reversed(ticks))
-        y_std = [a-s for a, s in zip(avgs, stds)] + list(reversed([a+s for a, s in zip(avgs, stds)]))
-        plotting.patch(x_std, y_std, fill_color=color, fill_alpha=alpha*0.25, line_color=None)
-    plotting.grid().grid_line_color = 'white'
-    plotting_axis()
+        stds = [(s, s) for s in stds]
+    return perf_astd(ticks, avgs, stds, **kwargs)
 
-    plotting.hold(False)
+bokeh_stds = perf_std
 
 
-def bokeh_astds(ticks, avgs, astds, color='#000055', alpha=1.0, sem=1.0, **kwargs):
-    plotting.line(ticks, avgs, color=color, line_alpha=alpha, title_text_font_size= '6pt', **kwargs)
+def perf_astd(ticks, avgs, astds, color=BLUE, alpha=1.0, sem=1.0,
+              plot_width=1000, plot_height=500, **kwargs):
+    plotting.line(ticks, avgs, color=color, line_alpha=alpha, title_text_font_size= '6pt',
+                  plot_width=plot_width, plot_height=plot_height, **kwargs)
     plotting.hold(True)
 
     if astds is not None:
@@ -300,6 +410,8 @@ def bokeh_astds(ticks, avgs, astds, color='#000055', alpha=1.0, sem=1.0, **kwarg
     plotting_axis()
 
     plotting.hold(False)
+
+bokeh_astds = perf_astd
 
 
 def bokeh_quantiles(ticks, avgs, quantiles, color='#000055', alpha=1.0, **kwargs):
@@ -318,8 +430,12 @@ def bokeh_quantiles(ticks, avgs, quantiles, color='#000055', alpha=1.0, **kwargs
     plotting.hold(False)
 
 
-def bokeh_std_discrete(ticks, avgs, stds, std_width=0.3, color=E_COLOR, alpha=1.0, legend=None, **kwargs):
-    plotting.rect(ticks, avgs, [std_width for _ in stds], 2*np.array(stds), line_color=None, fill_color=color, fill_alpha=alpha*0.5, **kwargs)
+def perf_std_discrete(ticks, avgs, stds, legend=None,
+                      std_width=0.3, plot_width=1000, plot_height=300,
+                      color=BLUE, alpha=1.0, **kwargs):
+    plotting.rect(ticks, avgs, [std_width for _ in stds], 2*np.array(stds),
+                  line_color=None, fill_color=color, fill_alpha=alpha*0.5,
+                  plot_width=plot_width, plot_height=plot_height, **kwargs)
     plotting.hold(True)
     plotting.line(ticks, avgs, line_color=color, line_alpha=alpha, legend=legend)
     plotting.circle(ticks, avgs, line_color=None, fill_color=color, fill_alpha=alpha)
@@ -329,45 +445,6 @@ def bokeh_std_discrete(ticks, avgs, stds, std_width=0.3, color=E_COLOR, alpha=1.
     plotting.hold(False)
 
 
-def bokeh_kin(kin_env, m_signals, color='#91C46C', alpha=1.0, swap_xy=True, radius_factor=1.0, title='title'): # '#DF4949'
-
-    for m_signal in m_signals:
-        m_vector = tools.to_vector(m_signal, kin_env.m_channels)
-        s_signal = kin_env._multiarm.forward_kin(m_vector)
-
-        xs, ys = [0.0], [0.0]
-        for i in range(kin_env.cfg.dim):
-            xs.append(s_signal['x{}'.format(i+1)])
-            ys.append(s_signal['y{}'.format(i+1)])
-
-        if isinstance(kin_env.cfg.lengths, numbers.Real):
-            total_length = kin_env.cfg.lengths*kin_env.cfg.dim
-        else:
-            total_length = sum(kin_env.cfg.lengths)
-        total_length += 0.0
-
-        kwargs ={'x_range'     : [-1.0, 1.0],
-                 'y_range'     : [-1.0, 1.0],
-                 'line_color'  : color,
-                 'line_alpha'  : alpha,
-                 'fill_color'  : color,
-                 'fill_alpha'  : alpha,
-                 'title'       : title
-                }
-
-        if swap_xy:
-            xs, ys = ys, xs
-
-        plotting.line(xs, ys, line_width=2.0*radius_factor, **kwargs)
-        plotting.hold(True)
-        plotting.grid().grid_line_color = None
-        plotting.ygrid().grid_line_color = None
-        plotting_axis()
-
-        plotting.circle(xs[  : 1], ys[  : 1], radius=radius_factor*0.015, **kwargs)
-        plotting.circle(xs[ 1:-1], ys[ 1:-1], radius=radius_factor*0.008, **kwargs)
-        plotting.circle(xs[-1:  ], ys[-1:  ], radius=radius_factor*0.01, color='red', alpha=alpha)
-    plotting.hold(False)
 
 
 if __name__ == '__main__':

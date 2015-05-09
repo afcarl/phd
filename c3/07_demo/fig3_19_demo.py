@@ -1,4 +1,6 @@
-from __future__ import division
+# Code for generating figures of the the PhD thesis:
+# 'Self-Exploration of Sensorimotor Spaces in Robots' by Fabien C. Y. Benureau
+# Licensed under the Open Science License (see http://fabien.benureau.com/openscience.html)
 
 import random
 
@@ -7,7 +9,6 @@ import explorers
 import environments
 
 import dotdot
-import bokeh_kin
 import factored
 import graphs
 import exs
@@ -17,8 +18,8 @@ import envs
 DIM = 100
 N = 10000
 
-from bokeh import plotting
-plotting.output_file('../../../results/c3_fig3_19_demo_{}.html'.format(DIM))
+graphs.output_file('c3_fig3_19_demo_{}.html'.format(DIM))
+
 
 learn1_cfg = learners.DisturbLearner.defcfg._deepcopy()
 learn1_cfg.m_disturb = 0.05
@@ -41,11 +42,11 @@ for r in [150]:
     for learn_cfg in [learn1_cfg]:#, learn2_cfg]: #, plwlr_cfg]:
         random.seed(0)
 
-        # Instanciating the Environment, the Explorer, and the Meshgrid
-        env_cfg = envs.catalog['kin{}_{}'.format(DIM, r)]._deepcopy()
+        # instanciating the environment
+        env_name, env_cfg = envs.kin(dim=DIM, limit=r)
         env = environments.Environment.create(env_cfg)
 
-        # Reuse Explorer Config
+        # instanciating the explorer
         ex_cfg                = explorers.MetaExplorer.defcfg._deepcopy()
         ex_cfg.eras           = (1, None)
         ex_cfg.weights        = ((1.0, 0.0), (0.0, 1.0))
@@ -62,28 +63,28 @@ for r in [150]:
         ex = explorers.Explorer.create(ex_cfg, datasets=[dataset])
 
 
-        # Running the Exploration
+        # running the exploration
         explorations, s_vectors, s_goals = factored.run_exploration(env, ex, N, verbose=True)
 
-        # Graphs
+        # making graphs
         milestones = [0, 100, 200, 500, 1000, 2000, 5000, N]
         for t in milestones[1:]:
             alpha = 0.5 if t == 100 else 0.25
 
 
-            graphs.bokeh_spread(ex.s_channels, s_vectors=s_vectors[:t], s_goals=(),
-                                e_radius=2.0, e_alpha=alpha,
-                                x_range=(-1.05, 1.05), y_range=(-1.05, 1.05),
-                                title='demo:t={}'.format(t))
-            plotting.hold(True)
-            bokeh_kin.display_signals(env, dataset['m_signals'], radius_factor=0.35, alpha=0.75)
-            plotting.hold(True)
-            graphs.bokeh_spread(ex.s_channels, s_vectors=s_vectors[:1], s_goals=(),
-                                e_radius=2.0, e_alpha=.0, e_color='#DF6464')
-            plotting.hold(True)
-            bokeh_kin.display_random_m_vectors(env, explorations[milestones[milestones.index(t)-1]:], n=10,
-                color='#666666', alpha=0.75, radius_factor=0.35)
+            graphs.spread(ex.s_channels, s_vectors=s_vectors[:t], s_goals=(),
+                          e_radius=2.0, e_alpha=alpha,
+                          x_range=(-1.05, 1.05), y_range=(-1.05, 1.05),
+                          title='demo:{}, t={}'.format(env_name, t))
+            graphs.hold(True)
+            graphs.posture_signals(env, dataset['m_signals'], radius_factor=0.35, alpha=0.75)
+            graphs.hold(True)
+            graphs.spread(ex.s_channels, s_vectors=s_vectors[:1], s_goals=(),
+                          e_radius=2.0, e_alpha=.0, e_color='#DF6464')
+            graphs.hold(True)
+            graphs.posture_random(env, explorations[milestones[milestones.index(t)-1]:], n=10,
+                                  alpha=0.75, radius_factor=0.35)
 
 
 
-plotting.show()
+graphs.show()

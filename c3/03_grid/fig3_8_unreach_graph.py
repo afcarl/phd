@@ -1,6 +1,8 @@
-import os
+# Code for generating figures of the the PhD thesis:
+# 'Self-Exploration of Sensorimotor Spaces in Robots' by Fabien C. Y. Benureau
+# Licensed under the Open Science License (see http://fabien.benureau.com/openscience.html)
 
-from bokeh import plotting
+import os
 
 from explib.graphs import hub
 from explib.jobs import jobfactory
@@ -43,15 +45,14 @@ os.chdir(cwd)
 
 if __name__ == "__main__":
     print('  '.join('{:6.3f}|{:6.3f}'.format(a,s) for a, s in zip(avgs, stds)))
-    plotting.output_file('../../../results/c3_fig3_8_unreach_perf.html')
+    graphs.output_file('c3_fig3_8_unreach_perf.html')
     colors = ['#2577B2', '#E84A5F']
 
     for color, tick in zip(colors, [2000, 10000]):
-        graphs.bokeh_std_discrete(ratios[tick], avgs[tick], stds[tick],
-                                  std_width=0.25, color=color, alpha=0.75,
-                                  y_range=[0.0, y_max + 0.01], #y_range=[y_min-0.1, y_max+0.1],
-                                  plot_width=1000, plot_height=400, title='t={}'.format(tick))
-        plotting.hold(True)
+        graphs.perf_std_discrete(ratios[tick], avgs[tick], stds[tick],
+                                 std_width=0.25, color=color, alpha=0.75,
+                                 y_range=[0.0, y_max + 0.01], #y_range=[y_min-0.1, y_max+0.1],
+                                 plot_width=1000, plot_height=400, title='t={}'.format(tick))
+        graphs.hold(True)
 
-    plotting.show()
-
+    graphs.show()

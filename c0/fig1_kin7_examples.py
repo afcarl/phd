@@ -2,8 +2,6 @@
 # 'Self-Exploration of Sensorimotor Spaces in Robots' by Fabien C. Y. Benureau
 # Licensed under the Open Science License (see http://fabien.benureau.com/openscience.html)
 
-from bokeh import plotting
-
 import environments
 
 import dotdot
@@ -25,6 +23,6 @@ m_vectors = [(132.654, -108.829, -100.829,  12.724, 133.011, -76.348, -118.995),
 m_signals = [environments.tools.to_signal(m_vector, env.m_channels) for m_vector in m_vectors]
 
 # making graphs
-plotting.output_file('../../results/c0_fig1_kin7_example.html')
-graphs.bokeh_kin(env, m_signals, color='#666666', alpha=0.5)
-plotting.show()
+graphs.output_file('c0_fig1_kin7_example.html')
+graphs.posture_signals(env, m_signals, color='#666666', alpha=0.5)
+graphs.show()

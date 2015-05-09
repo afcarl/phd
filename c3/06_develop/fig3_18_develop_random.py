@@ -1,7 +1,9 @@
+# Code for generating figures of the the PhD thesis:
+# 'Self-Exploration of Sensorimotor Spaces in Robots' by Fabien C. Y. Benureau
+# Licensed under the Open Science License (see http://fabien.benureau.com/openscience.html)
+
 import random
 import copy
-
-from bokeh import plotting
 
 import explorers
 import environments
@@ -12,10 +14,11 @@ import factored
 import graphs
 import exs
 import envs
-import bokeh_kin
 
 
 DIM   = 40
+assert DIM % 2 == 0
+
 LIMIT = 150
 N     = 10000
 REP   = 1
@@ -34,8 +37,6 @@ def update_m_channels(env, ex, m_center, r):
 
 # m_centers
 random.seed(0)
-assert DIM % 2 == 0
-#m_centers = [(-150, 150)*int(DIM/2)]
 m_centers = [(0, 0)*int(DIM/2)]
 
 milestones = [ 0, 500,   N]
@@ -48,15 +49,15 @@ lrns = {'disturb': exs.learn_cfg._deepcopy(),
 ex_name = 'random.goal'
 
 if __name__ == '__main__':
-    plotting.output_file('../../../results/c3_fig3_18_develop_random_{}.html'.format(DIM))
+    graphs.output_file('c3_fig3_18_develop_random_{}.html'.format(DIM))
 
     for rep, m_center in enumerate(m_centers):
         for lrn_name, lrn_cfg in lrns.items():
             for milestones, ranges in [([0, 500, N], [150, 150, 150]), ([0, 500, N], [80, 150, 150])]:
                 random.seed(0)
 
-                # Instanciating the Environment, the Explorer, and the Meshgrid
-                env_cfg = envs.kin(dim=DIM, limit=LIMIT)
+                # instanciating the environment, and the Meshgrid
+                env_name, env_cfg = envs.kin(dim=DIM, limit=LIMIT)
                 env = environments.Environment.create(env_cfg)
 
                 ex_cfg = exs.catalog[ex_name]._deepcopy()
@@ -69,7 +70,7 @@ if __name__ == '__main__':
 
                 update_m_channels(env, ex, m_center, ranges[0])
 
-                # Running the Exploration
+                # running the exploration
                 explorations, s_vectors, s_goals = [], [], []
 
                 for t in range(N):
@@ -90,18 +91,20 @@ if __name__ == '__main__':
                         # update m_channels
                         update_m_channels(env, ex, m_center, ranges[idx])
                         print('{}: {} ({})'.format(t+1, ex.m_channels[0].bounds, lrn_name))
-                        graphs.bokeh_spread(ex.s_channels, s_vectors=s_vectors[:last_milestone],
-                                            e_alpha=0.50,
-                                            title=']{}, {}] period : {} ({})'.format(
-                                                  last_milestone, t+1, ex.m_channels[0].bounds, lrn_name))
-                        plotting.hold(True)
-                        graphs.bokeh_spread(ex.s_channels, s_vectors=s_vectors[last_milestone:],
-                                            e_alpha=alpha, e_radius=radius)
-                        # display examples
-                        plotting.hold(True)
-                        bokeh_kin.display_random_m_vectors(env, explorations[last_milestone:], n=5,
-                            color='#666666', alpha=1.0, radius_factor=0.50)
-                        plotting.hold(False)
+
+                        # making graphs
+                        graphs.spread(ex.s_channels, s_vectors=s_vectors[:last_milestone],
+                                      e_alpha=0.50,
+                                      title=']{}, {}] period : {} ({})'.format(
+                                            last_milestone, t+1, ex.m_channels[0].bounds, lrn_name))
+                        graphs.hold(True)
+                        graphs.spread(ex.s_channels, s_vectors=s_vectors[last_milestone:],
+                                      e_alpha=alpha, e_radius=radius)
+                        # display postures
+                        graphs.hold(True)
+                        graphs.posture_random(env, explorations[last_milestone:], n=5,
+                            radius_factor=0.50)
+                        graphs.hold(False)
 
 
                 min_y, min_idx = 0, -1
@@ -111,12 +114,12 @@ if __name__ == '__main__':
                         min_idx = i
 
                 # making graphs
-                graphs.bokeh_spread(env.s_channels, s_vectors=s_vectors,
-                                    e_radius=1.5, e_alpha=0.25, plot_height=250, plot_width=800,
-                                    y_range=[-1, 0.05], x_range=[-0.2, 0.1],
-                                    title='{}::{}'.format(ex_name, 'kin{}_{}'.format(DIM, LIMIT)))
-                plotting.hold(True)
-                bokeh_kin.display_signals(env, [explorations[min_idx][0]['m_signal']],
-                                          color='#666666', alpha=0.75, radius_factor=0.35)
+                graphs.spread(env.s_channels, s_vectors=s_vectors,
+                              e_radius=1.5, e_alpha=0.25, plot_height=250, plot_width=800,
+                              y_range=[-1, 0.05], x_range=[-0.2, 0.1],
+                              title='{}::{}'.format(ex_name, env_name))
+                graphs.hold(True)
+                graphs.posture_signals(env, [explorations[min_idx][0]['m_signal']],
+                                       alpha=0.75, radius_factor=0.35)
 
-    plotting.show()
+    graphs.show()

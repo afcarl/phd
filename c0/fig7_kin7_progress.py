@@ -4,8 +4,6 @@
 
 import random
 
-from bokeh import plotting
-
 import explorers
 import environments
 
@@ -19,7 +17,7 @@ import factored
 N = 10000
 milestones = [100, 200, 500, 1000, 2000, 3000, 4000, 5000, 5500, 6000, 7000, 8000, 9000, 100000]
 
-plotting.output_file('../../results/c0_fig7_kin7_progress.html')
+graphs.output_file('c0_fig7_kin7_progress.html')
 
 
 def find_rightmost(s_vectors, x_min, x_max):
@@ -32,7 +30,7 @@ def find_rightmost(s_vectors, x_min, x_max):
     return max_idx
 
 for env_name in ['kin7_150']:
-    for explorer_name in ['random.goal']:
+    for ex_name in ['random.goal']:
         random.seed(0)
 
         # instanciating the environment
@@ -40,7 +38,7 @@ for env_name in ['kin7_150']:
         env = environments.Environment.create(env_cfg)
 
         # instanciating the explorer
-        ex_cfg = exs.catalog[explorer_name]._deepcopy()
+        ex_cfg = exs.catalog[ex_name]._deepcopy()
         ex_cfg.m_channels = env.m_channels
         ex_cfg.s_channels = env.s_channels
         ex = explorers.Explorer.create(ex_cfg)
@@ -59,13 +57,13 @@ for env_name in ['kin7_150']:
             idxs.append(find_rightmost(s_vectors[:t], -0.900, -0.850))
 
 
-            graphs.bokeh_spread(env.s_channels, s_vectors=s_vectors[:t],
-                                e_radius=1.4, e_alpha=0.5,
-                                title='{}::{}::{}'.format(explorer_name, env_name, t))
+            graphs.spread(env.s_channels, s_vectors=s_vectors[:t],
+                          e_radius=1.4, e_alpha=0.5,
+                          title='{}::{}::{}'.format(ex_name, env_name, t))
 
             for idx in idxs:
-                plotting.hold(True)
-                graphs.bokeh_kin(env, [explorations[idx][0]['m_signal']],
+                graphs.hold(True)
+                graphs.posture_signals(env, [explorations[idx][0]['m_signal']],
                                  color='#666666', alpha=0.50, radius_factor=0.6)
 
-plotting.show()
+graphs.show()

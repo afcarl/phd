@@ -15,46 +15,50 @@ import graphs
 import factored
 
 
-N = 10000
-BUFF_SIZE = 0.05
+DIM = 20
+N   = 10000
+TAU = 0.05  # for coverage evalution
 
-from bokeh import plotting
-plotting.output_file('../../../results/c3_fig3_2_eval_covnn.html')
+graphs.output_file('c3_fig3_2_eval_covnn.html')
 
-colors = ['#2577B2', '#E84A5F']
-y_ranges = [(0, 0.65), (0, math.pi)]
 
-for kind, y_range in zip(['nn', 'cov'], y_ranges):
-    for env_name in ['kin20_150']:
-        for i, explorer_name in enumerate(['random.motor', 'random.goal']):
-            random.seed(0)
+ex_names   = ['random.motor', 'random.goal']
+colors     = [graphs.MOTOR_COLOR,  graphs.GOAL_COLOR]
 
-            # Instanciating the Environment, the Explorer
-            env_cfg = envs.catalog[env_name]._deepcopy()
-            env = environments.Environment.create(env_cfg)
+# evaluating with testset-based and coverage-based measure.
+eval_kinds = [     'nn',        'cov']
+y_ranges   = [(0, 0.65), (0, math.pi)]
+ticks = [1, 2, 3, 4, 5, 10, 15, 20] + [j for j in range(25, N+1, 25)]
 
-            ex_cfg = exs.catalog[explorer_name]._deepcopy()
-            ex_cfg.m_channels = env.m_channels
-            ex_cfg.s_channels = env.s_channels
-            ex = explorers.Explorer.create(ex_cfg)
 
-            # Running the Exploration
-            explorations, s_vectors, s_goals = factored.run_exploration(env, ex, N)
+for kind, y_range in zip(eval_kinds, y_ranges):
 
-            # Graph
-            stds = None
-            ticks = [1, 2, 3, 4, 5, 10, 15, 20] + [j for j in range(25, N+1, 25)]
-            if kind == 'cov':
-                perf = factored.run_coverages(BUFF_SIZE, s_vectors, ticks=ticks)
-                # perf = [factored.run_coverage(BUFF_SIZE, s_vectors[:j]) for j in range(1, N)]
-            else:
-                testset = factored.testset()
-                perf, stds_ = factored.run_nns(testset, s_vectors, ticks=ticks)
+    for ex_name, color in zip(ex_names, colors):
+        random.seed(0)
 
-            graphs.bokeh_stds(ticks, perf, stds, color=colors[i], title=kind, y_range=y_range,
-                              plot_width=500, plot_height=300)
-            plotting.hold(True)
-            print('{} {}'.format(kind, explorer_name))
-    plotting.hold(False)
+        # instanciating the environment
+        env_name, env_cfg = envs.kin(dim=DIM, limit=150)
+        env = environments.Environment.create(env_cfg)
 
-plotting.show()
+        ex_cfg = exs.catalog[ex_name]._deepcopy()
+        ex_cfg.m_channels = env.m_channels
+        ex_cfg.s_channels = env.s_channels
+        ex = explorers.Explorer.create(ex_cfg)
+
+        # running the exploration
+        prefix = '{} {}'.format(kind, ex_name, kind)
+        explorations, s_vectors, s_goals = factored.run_exploration(env, ex, N, prefix=prefix)
+
+        # making graphs
+        if kind == 'cov':
+            perf = factored.run_coverages(TAU, s_vectors, ticks=ticks)
+        else:
+            perf, _ = factored.run_nns(factored.testset(), s_vectors, ticks=ticks)
+
+        graphs.perf_std(ticks, perf, None, color=color, title=kind, y_range=y_range,
+                        plot_width=500, plot_height=300)
+        graphs.hold(True)
+
+    graphs.hold(False)
+
+graphs.show()

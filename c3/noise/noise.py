@@ -14,9 +14,8 @@ import graphs
 N = 10000
 P_NOISE = 0.01
 
-# Graph
-from bokeh import plotting
-plotting.output_file('../../../results/c3_noise.html')
+# making graphs
+graphs.output_file('c3_noise.html')
 
 def add_noise(signal, channels, p):
     """Return a noisy signal"""
@@ -36,7 +35,7 @@ sm_noises = [[0.0, 0.0], [0.0,  0.01], [0.0,  0.02], [0.0,  0.05], [0.0, 0.1], [
 for s_noise, m_noise in sm_noises:
     random.seed(0)
 
-    # Instanciating the Environment, the Explorer, and the Meshgrid
+    # instanciating the environment, and the Meshgrid
     env_cfg = envs.catalog[env_name]
     env = environments.Environment.create(env_cfg)
 
@@ -45,7 +44,7 @@ for s_noise, m_noise in sm_noises:
     ex_cfg.s_channels = env.s_channels
     ex = explorers.Explorer.create(ex_cfg)
 
-    # Running the Exploration
+    # running the exploration
     explorations, s_vectors, s_goals = [], [], []
 
     for i in range(N):
@@ -62,4 +61,4 @@ for s_noise, m_noise in sm_noises:
                         e_radius=1.25, e_alpha=0.25,
                         title='{}::s:{}:m:{}'.format(env_name, s_noise, m_noise))
 
-plotting.show()
+graphs.show()

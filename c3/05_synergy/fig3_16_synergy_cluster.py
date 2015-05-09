@@ -1,3 +1,7 @@
+# Code for generating figures of the the PhD thesis:
+# 'Self-Exploration of Sensorimotor Spaces in Robots' by Fabien C. Y. Benureau
+# Licensed under the Open Science License (see http://fabien.benureau.com/openscience.html)
+
 import os
 
 import explib
@@ -28,7 +32,7 @@ cfg.testsetnn.input_file   = paths.testset_filepath
 cfg.testsnn.ticks          = [10000] #1, 2, 3, 4, 5, 10, 15, 20] + [i for i in range(25, cfg.job.steps+1, 25)]
 
 expcfgs_levels = [[]]
-for explorer_name in ['random.motor', 'random.goal']:
+for explorer_name in ['random.motor']: #, 'random.goal']:
     for env_name in ['kin20_150', 'kinsyn20_2']:
         exp_cfg = cfg._deepcopy()
 

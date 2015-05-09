@@ -1,8 +1,11 @@
+# Code for generating figures of the the PhD thesis:
+# 'Self-Exploration of Sensorimotor Spaces in Robots' by Fabien C. Y. Benureau
+# Licensed under the Open Science License (see http://fabien.benureau.com/openscience.html)
+
 import os
 import math
 
 import numpy as np
-from bokeh import plotting
 
 from explib.graphs import hub
 from explib.jobs import jobfactory
@@ -49,22 +52,15 @@ for env_name in env_displayed:
     avgs[env_name] = np.array([avgs[env_name][d] for d in disturb[env_name]])
     stds[env_name] = np.array([stds[env_name][d] for d in disturb[env_name]])
     y_max = max(y_max, max(avgs[env_name] + stds[env_name]))
-    print(y_max)
 
 os.chdir(cwd)
 colors = ['#2577B2', '#E84A5F']
-plotting.output_file('../../../results/c3_fig3_14_inverse_perf.html')
+graphs.output_file('c3_fig3_14_inverse_perf.html')
 
 for env_name in env_displayed:
-    print(disturb[env_name])
     x = [math.log(d) for d in disturb[env_name]]
-    graphs.bokeh_std_discrete(x, avgs[env_name], stds[env_name], std_width=0.02,
-                              y_range=[0.0, 0.3], plot_width=1000, plot_height=300, title=str(env_name))
-    plotting.hold(True)
-    plotting.xaxis().minor_tick_line_color = None
-    plotting.grid().grid_line_color = None
-    plotting.xaxis().minor_tick_out = 0
-    plotting.hold(False)
+    graphs.perf_std_discrete(x, avgs[env_name], stds[env_name], std_width=0.02,
+                            y_range=[0.0, 0.3], title=str(env_name),
+                            plot_width=1000, plot_height=300)
 
-plotting.show()
-
+graphs.show()

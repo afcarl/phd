@@ -1,5 +1,7 @@
 from __future__ import division
 
+import math
+
 import numpy as np
 import shapely
 
@@ -31,12 +33,12 @@ def testset():
     return _testset
 
 
-def run_exploration(env, ex, N, mesh=None, verbose=False):
+def run_exploration(env, ex, N, mesh=None, verbose=True, prefix=''):
     explorations, s_vectors, s_goals = [], [], []
 
     for i in range(N):
         if verbose and i % 100 == 0:
-            gfx.print_progress(i, N)
+            gfx.print_progress(i, N, prefix=prefix)
         exploration = ex.explore()
         feedback = env.execute(exploration['m_signal'])
         ex.receive(exploration, feedback)
@@ -47,8 +49,8 @@ def run_exploration(env, ex, N, mesh=None, verbose=False):
             mesh.add(feedback['s_signal'], m_signal=exploration['m_signal'])
         explorations.append((exploration, feedback))
     if verbose:
-        gfx.print_progress(N, N)
-    #print('')
+        gfx.print_progress(N, N, prefix=prefix)
+
     return explorations, s_vectors, s_goals
 
 
@@ -60,30 +62,37 @@ def run_nn(testset, s_vectors):
 
     errors = []
     for s_vector_goal in testset:
-        dist, idx = nnset.nn_y(s_vector_goal, k=1)
+        distances, idx = nnset.nn_y(s_vector_goal, k=1)
         s_vector = nnset.ys[idx[0]]
         errors.append(dist(s_vector_goal, s_vector))
 
     return errors
 
-def run_nns(testset, s_vectors, ticks=None):
+def run_nns(testset, s_vectors, ticks=None, verbose=True):
     if ticks is None:
         ticks = range(len(s_vectors))
-    ticks = set(ticks)
+    ticks, N = set(ticks), len(ticks)
+
 
     avgs, stds = [], []
     nnset = learners.NNSet()
     for t, s_vector in enumerate(s_vectors):
+
         nnset.add((), s_vector)
 
         if t in ticks:
+            if verbose:
+                gfx.print_progress(len(avgs) , N)
             errors = []
             for s_vector_goal in testset:
-                dist, idx = nnset.nn_y(s_vector_goal, k=1)
+                distances, idx = nnset.nn_y(s_vector_goal, k=1)
                 s_vector = nnset.ys[idx[0]]
                 errors.append(dist(s_vector_goal, s_vector))
             avgs.append(np.mean(errors))
             stds.append(np.std(errors))
+
+    if verbose:
+        gfx.print_progress(N, N)
 
     return avgs, stds
 
@@ -141,3 +150,22 @@ def compass_extrema(s_vectors):
 
     return {'min_x': min_x_idx, 'max_x': max_x_idx,
             'min_y': min_y_idx, 'max_y': max_y_idx}
+
+
+
+thetas = tuple(i*math.pi/4 for i in range(8))
+
+def spread_extrema(s_vectors, dirs=thetas):
+    def proj(x, y, theta):
+        return (  x*math.cos(theta)
+                + y*math.sin(theta))
+
+    records = [(float('-inf'), -1) for d in thetas]
+    for i, (x, y) in enumerate(s_vectors):
+        for j, theta in enumerate(thetas):
+            d = proj(x, y, theta)
+            if records[j][0] < d:
+                records[j] = d, i
+
+    return [idx for d, idx in records]
+

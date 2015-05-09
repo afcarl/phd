@@ -25,12 +25,11 @@ datafile.save_file(dataset, '../../testsets/testset_kinone')
 
 if __name__ == '__main__':
     import graphs
-    from bokeh import plotting
-    plotting.output_file('../../../results/testset_kinone.html')
+        graphs.output_file('testset_kinone.html')
 
     graphs.bokeh_spread(kin.s_channels, s_vectors=s_vectors,
                         e_radius=1.5, e_alpha=0.75,
                         title='{} tests'.format(len(s_vectors)))
     plotting.grid().grid_line_color = 'white'
 
-    plotting.show()
+    graphs.show()
