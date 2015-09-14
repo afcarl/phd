@@ -43,6 +43,7 @@ for disturb in disturbs:
         for env_name in env_names:
             exp_cfg = cfg._deepcopy()
 
+            exp_cfg.exploration.explorer._strict(False)
             exp_cfg.exploration.explorer._update(exs.catalog[explorer_name]._deepcopy(), overwrite=False)
             exp_cfg.exploration.explorer.weights                = ((1.0, 0.0), (p, 1-p))
             exp_cfg.exploration.explorer.eras                   = (1, None)
