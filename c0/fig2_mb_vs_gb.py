@@ -38,7 +38,7 @@ for env_name in ['kin2_150', 'kin7_150', 'kin20_150', 'kin100_150']:
 
         # making graphs
         graphs.spread(env.s_channels, s_vectors=s_vectors,
-                      e_radius=1.3, e_alpha=0.5,
+                      e_radius=1.3, e_alpha=0.5, grid=False,
                       title='{}::{}'.format(ex_name, env_name))
 
 
