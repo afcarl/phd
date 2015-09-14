@@ -30,10 +30,9 @@ def update_m_channels(env, ex, m_center, r):
     for m_i, c_x, c_e in zip(m_center, m_channels, env.m_channels):
         c_x.bounds = (max(c_e.bounds[0], m_i-r),
                       min(c_e.bounds[1], m_i+r))
-    ex.m_channels = m_channels
-    ex.explorers[0].m_channels = m_channels
-    ex.explorers[1].m_channels = m_channels
-    ex.explorers[1]._learners[0].m_channels = m_channels
+    ex._m_channels = m_channels
+    ex.explorers[0]._m_channels = m_channels
+    ex.explorers[1]._learners[0].virtual_m_channels = m_channels
 
 # m_centers
 random.seed(0)
@@ -62,8 +61,6 @@ if __name__ == '__main__':
 
                 ex_cfg = exs.catalog[ex_name]._deepcopy()
                 ex_cfg.ex_1.learner = lrn_cfg
-                ex_cfg.ex_1.learner.m_uniformize = False
-                ex_cfg.ex_1.learner.m_disturb = (2*LIMIT)*0.05
                 ex_cfg.m_channels = env.m_channels
                 ex_cfg.s_channels = env.s_channels
                 ex = explorers.Explorer.create(ex_cfg)
@@ -88,11 +85,9 @@ if __name__ == '__main__':
                         alpha = 0.75 if t+1 != N else 0.20
                         radius = 1.5 if t+1 != N else 1.5
 
-                        # update m_channels
-                        update_m_channels(env, ex, m_center, ranges[idx])
-                        print('{}: {} ({})'.format(t+1, ex.m_channels[0].bounds, lrn_name))
 
                         # making graphs
+                        print('{: 6.0f}: {} ({})'.format(t+1, ex.m_channels[0].bounds, lrn_name))
                         graphs.spread(ex.s_channels, s_vectors=s_vectors[:last_milestone],
                                       e_alpha=0.50,
                                       title=']{}, {}] period : {} ({})'.format(
@@ -105,6 +100,9 @@ if __name__ == '__main__':
                         graphs.posture_random(env, explorations[last_milestone:], n=5,
                             radius_factor=0.50)
                         graphs.hold(False)
+
+                        # update m_channels
+                        update_m_channels(env, ex, m_center, ranges[idx])
 
 
                 min_y, min_idx = 0, -1
