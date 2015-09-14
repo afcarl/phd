@@ -4,6 +4,7 @@
 
 import random
 
+from bokeh import plotting
 
 import explorers
 import environments
@@ -52,12 +53,11 @@ for env_name in ['kin2_150', 'kin20_150']:
                         title='goal distribution for {}'.format(ex_name))
         graphs.hold(True)
         graphs.spread(ex.s_channels, s_vectors=(), s_goals=s_goals,
-                      g_radius=radius, g_alpha=alpha,
+                      g_radius=radius, g_alpha=alpha, grid=None,
                       title='{} goals'.format(ex_name))
 
         graphs.spread(ex.s_channels, s_vectors=s_vectors, s_goals=(),
-                      e_radius=1.0, e_alpha=0.35,
-                      x_range=(-1, 1), y_range=(-1, 1),
+                      e_radius=1.0, e_alpha=0.35, grid=None,
                       title=ex_name)
 
 graphs.show()

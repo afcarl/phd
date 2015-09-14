@@ -26,7 +26,7 @@ timescale = [20000]
 mesh_colors = ['#e5e5e5']
 
 
-for ex_name in ['random.motor']: #, 'random.goal']:
+for ex_name in ['random.motor', 'random.goal']:
     for synergy in [2, None]:
         random.seed(0)
 
